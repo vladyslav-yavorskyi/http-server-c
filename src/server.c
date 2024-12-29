@@ -12,8 +12,8 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/wait.h>
-#include <string.h>
 #include "response.h"
+#include "utils.h"
 #include "config.h"
 
 
@@ -65,20 +65,13 @@ void server_init() {
       }
 
       buffer[n] = '\0';
-      char path[1024];
+      char path[1024], full_path[1024];
 
       sscanf(buffer, "GET %s HTTP/1.1", path);
 
-      if (strcmp(path, "/") == 0) {
-        strcpy(path, "public/index.html");
-      }
-      printf("Request for %s\n", path);
-      
-      if (path[0] == '/') {
-        memmove(path, path + 1, strlen(path));
-      }
+      construct_path(path, full_path, sizeof(path)); 
 
-      send_response(client_fd, path);
+      send_response(client_fd, full_path);
       close(client_fd);
       exit(EXIT_SUCCESS);
     }
