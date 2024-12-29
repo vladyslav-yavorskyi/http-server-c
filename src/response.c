@@ -26,14 +26,17 @@ char *get_mime_type(char *path) {
 void send_notfound_response(int client_fd) {
   char *status_line = "HTTP/1.1 404 Not Found\r\n";
   char *content_type = "Content-Type: text/html\r\n";
+  char *length = "Content-Length: 40\r\n";
   char *body = "<html><body><h1>404 Not Found</h1></body></html>";
   char *end_of_headers = "\r\n";
 
   send(client_fd, status_line, strlen(status_line), 0);
   send(client_fd, content_type, strlen(content_type), 0);
+  send(client_fd, length, strlen(length), 0);
   send(client_fd, end_of_headers, strlen(end_of_headers), 0);
   send(client_fd, body, strlen(body), 0);
   
+  close(client_fd);
   return;
 }
 
@@ -42,8 +45,8 @@ void send_response(int client_fd, char *path) {
   printf("path: %s\n", path);
   int fd;
   if ((fd = open(path, O_RDONLY)) < 0) {
-    perror("open failed");
     send_notfound_response(client_fd);
+    perror("open failed");
     return;
   }
 
