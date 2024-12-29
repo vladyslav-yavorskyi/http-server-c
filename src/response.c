@@ -23,21 +23,27 @@ char *get_mime_type(char *path) {
   return "application/octet-stream"; // default MIME type
 }
 
+void send_notfound_response(int client_fd) {
+  char *status_line = "HTTP/1.1 404 Not Found\r\n";
+  char *content_type = "Content-Type: text/html\r\n";
+  char *body = "<html><body><h1>404 Not Found</h1></body></html>";
+  char *end_of_headers = "\r\n";
+
+  send(client_fd, status_line, strlen(status_line), 0);
+  send(client_fd, content_type, strlen(content_type), 0);
+  send(client_fd, end_of_headers, strlen(end_of_headers), 0);
+  send(client_fd, body, strlen(body), 0);
+  
+  return;
+}
+
 void send_response(int client_fd, char *path) {
 
   printf("path: %s\n", path);
   int fd;
   if ((fd = open(path, O_RDONLY)) < 0) {
     perror("open failed");
-    char *status_line = "HTTP/1.1 404 Not Found\r\n"; 
-    char *content_type = "Content-Type: text/html\r\n";
-    char *body = "<html><body><h1>404 Not Found</h1></body></html>";
-    char *end_of_headers = "\r\n";
-
-    send(client_fd, status_line, strlen(status_line), 0);
-    send(client_fd, content_type, strlen(content_type), 0);
-    send(client_fd, end_of_headers, strlen(end_of_headers), 0);
-    send(client_fd, body, strlen(body), 0);
+    send_notfound_response(client_fd);
     return;
   }
 
@@ -66,7 +72,12 @@ void generate_headers(int client_fd, char *path) {
   char content_type_header[128];
   sprintf(content_type_header, "Content-Type: %s\r\n", content_type);
 
-
+  char *content_length = "Content-Length: ";
+  struct stat st;
+  stat(path, &st);
+  char content_length_header[128];
+  sprintf(content_length_header, "%s%ld\r\n", content_length, st.st_size);
+  
   char *connection = "Connection: close\r\n";
   char *end_of_headers = "\r\n";
   ssize_t sent;
@@ -82,6 +93,13 @@ void generate_headers(int client_fd, char *path) {
       perror("send content type header failed");
       return;
   }
+
+  sent = send(client_fd, content_length_header, strlen(content_length_header), 0);
+  if (sent < 0) {
+      perror("send content length header failed");
+      return;
+  }
+
 
   sent = send(client_fd, connection, strlen(connection), 0);
   if (sent < 0) {

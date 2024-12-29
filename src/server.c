@@ -39,6 +39,8 @@ void server_init() {
     perror("listen failed");
     exit(EXIT_FAILURE);
   }
+
+  printf("==== Server started on port %d ====\n", PORT);
   
   while (1) {
     int client_fd;

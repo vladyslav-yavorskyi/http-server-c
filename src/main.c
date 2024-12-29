@@ -10,7 +10,6 @@ int main() {
     exit(EXIT_FAILURE);
   }
 
-
   server_init();
   return EXIT_SUCCESS;
 }
