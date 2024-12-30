@@ -8,6 +8,13 @@
 #include <netinet/in.h>
 #include "response.h"
 
+#ifndef TESTING
+  #define SEND_FUNC(fd, buf, len, flags) write(fd, buf, len)
+#else 
+  #define SEND_FUNC(fd, buf, len, flags) send(fd, buf, len, flags)
+#endif
+
+
 char *get_mime_type(char *path) {
   const char *ext = strrchr(path, '.');
   if (ext) {
@@ -30,11 +37,11 @@ void send_notfound_response(int client_fd) {
   char *body = "<html><body><h1>404 Not Found</h1></body></html>";
   char *end_of_headers = "\r\n";
 
-  send(client_fd, status_line, strlen(status_line), 0);
-  send(client_fd, content_type, strlen(content_type), 0);
-  send(client_fd, length, strlen(length), 0);
-  send(client_fd, end_of_headers, strlen(end_of_headers), 0);
-  send(client_fd, body, strlen(body), 0);
+  SEND_FUNC(client_fd, status_line, strlen(status_line), 0);
+  SEND_FUNC(client_fd, content_type, strlen(content_type), 0);
+  SEND_FUNC(client_fd, length, strlen(length), 0);
+  SEND_FUNC(client_fd, end_of_headers, strlen(end_of_headers), 0);
+  SEND_FUNC(client_fd, body, strlen(body), 0);
   
   close(client_fd);
   return;
@@ -53,13 +60,13 @@ void send_response(int client_fd, char *path) {
   printf("file opened\n");
   generate_headers(client_fd, path);
 
-  printf("sending file\n"); 
+  printf("SEND_FUNCing file\n"); 
   char buffer[1024];
   int n;
 
   while ((n = read(fd, buffer, sizeof(buffer))) > 0) {
-    if (send(client_fd, buffer, n, 0) < 0) {
-      perror("send failed");
+    if (SEND_FUNC(client_fd, buffer, n, 0) < 0) {
+      perror("SEND_FUNC failed");
       return;
     }
   }
@@ -85,34 +92,34 @@ void generate_headers(int client_fd, char *path) {
   char *end_of_headers = "\r\n";
   ssize_t sent;
 
-  sent = send(client_fd, status_line, strlen(status_line), 0);
+  sent = SEND_FUNC(client_fd, status_line, strlen(status_line), 0);
   if (sent < 0) {
-      perror("send status line failed");
+      perror("SEND_FUNC status line failed");
       return;
   }
 
-  sent = send(client_fd, content_type_header, strlen(content_type_header), 0);
+  sent = SEND_FUNC(client_fd, content_type_header, strlen(content_type_header), 0);
   if (sent < 0) {
-      perror("send content type header failed");
+      perror("SEND_FUNC content type header failed");
       return;
   }
 
-  sent = send(client_fd, content_length_header, strlen(content_length_header), 0);
+  sent = SEND_FUNC(client_fd, content_length_header, strlen(content_length_header), 0);
   if (sent < 0) {
-      perror("send content length header failed");
+      perror("SEND_FUNC content length header failed");
       return;
   }
 
 
-  sent = send(client_fd, connection, strlen(connection), 0);
+  sent = SEND_FUNC(client_fd, connection, strlen(connection), 0);
   if (sent < 0) {
-      perror("send connection header failed");
+      perror("SEND_FUNC connection header failed");
       return;
   }
 
-  sent = send(client_fd, end_of_headers, strlen(end_of_headers), 0);
+  sent = SEND_FUNC(client_fd, end_of_headers, strlen(end_of_headers), 0);
   if (sent < 0) {
-      perror("send end of headers failed");
+      perror("SEND_FUNC end of headers failed");
       return;
   }
 

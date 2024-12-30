@@ -41,6 +41,7 @@ void server_init() {
   }
 
   printf("==== Server started on port %d ====\n", PORT);
+  printf("==== Waiting for connections ====\n");
   
   while (1) {
     int client_fd;
